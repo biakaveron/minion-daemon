@@ -49,8 +49,8 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
 	 * @access protected
 	 */
 	protected $_daemon_config = array(
-		"fork",
-		"pid",
+		"fork" => NULL,
+		"pid" => NULL
 	);
 
 	/**
@@ -71,7 +71,6 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
 	 */
 	protected $_log_writers = array();
 
-
 	/**
 	 * Sets up the daemon task
 	 *
@@ -81,10 +80,13 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
 	public function __construct()
 	{
 		// No time limit on minion daemon tasks
-		set_time_limit(0);
+		set_time_limit(0);		
 
 		// Attach logger.  By default, this is the Minion logger.
 		$this->_logger = (class_exists("Minion_Log")) ? Minion_Log::instance() : Kohana::$log;
+		$this->_options = Arr::merge($this->_daemon_config, $this->_config);
+
+		$this->_accepted_options = array_keys($this->_options);
 
 		// Attach the standard Kohana log file as an output.
 		$log_path = Kohana::$config->load('minion-daemon')->logpath;
@@ -92,9 +94,6 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
 
 		// Attach stdout log as an output.  Write to it on add
 		$this->_logger->attach($this->_log_writers['stdout'] = new Log_StdOut, array(), 0, TRUE);
-
-		// Merge configs
-		$this->_config = Arr::merge($this->_daemon_config, $this->_config);
 
 		if ( ! function_exists('pcntl_signal_dispatch'))
 		{
@@ -210,7 +209,7 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
 	 * @param boolean $exit Exit() on completion?
 	 * @return void
 	 */
-	public function execute(array $config, $exit = TRUE)
+	protected function _execute(array $config, $exit = TRUE)
 	{
 		// Should we fork this daemon?
 		if (array_key_exists('fork', $config) AND $config['fork'] == TRUE)
@@ -268,6 +267,7 @@ abstract class Kohana_Minion_Daemon extends Minion_Task {
             if ($this->_terminate OR $result === FALSE)
             	break;
 
+            Minion_CLI::write($iterations);
             // Do we need to do any cleanup?
             if ($iterations == $this->_cleanup_iterations)
             {

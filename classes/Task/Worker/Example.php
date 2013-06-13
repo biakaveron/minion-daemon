@@ -5,7 +5,7 @@
  * 
  * @extends Minion_Daemon
  */
-class Minion_Task_Worker_Example extends Minion_Daemon {
+class Task_Worker_Example extends Minion_Daemon {
 
 	/**
 	 * @var array Minion config options.  Merged with Minion_Daemon options
